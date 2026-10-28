@@ -226,4 +226,136 @@ void marcoTexto(const string& t, int color, bool centrado) {
     setColor(color);   cout << ajustar(linea, interior);
     setColor(C_BORDE); cout << G(186) << "\n";
 }
+void marcoOpcion(const string& tecla, const string& texto) {
+    int interior = ANCHO - 2;
+    string resto = "  " + texto;
+    setColor(C_BORDE);  cout << G(186) << "   ";
+    setColor(C_OPCION); cout << "[" << tecla << "]";
+    setColor(C_NORMAL); cout << ajustar(resto, interior - 3 - (int)tecla.size() - 2);
+    setColor(C_BORDE);  cout << G(186) << "\n";
+}
+
+void marcoVacio() { marcoTexto("", C_NORMAL, false); }
+
+// ----- encabezado de cada pantalla -----
+void cabecera(const string& titulo) {
+    limpiarPantalla();
+    marcoSuperior();
+    marcoTexto("A L M A C E N   D E   A U T O P A R T E S", C_TITULO, true);
+    marcoTexto("Universidad Continental - Estructura de Datos", C_NORMAL, true);
+    marcoDivisor();
+    marcoTexto(titulo, C_DATO, true);
+    marcoInferior();
+    cout << "\n";
+}
+
+// ----- tablas con bordes -----
+void lineaTabla(const int* w, int n, int izq, int med, int der) {
+    setColor(C_BORDE);
+    cout << "  " << G(izq);
+    for (int i = 0; i < n; i++) {
+        cout << repetir(G(196), w[i] + 2);
+        cout << G(i < n - 1 ? med : der);
+    }
+    cout << "\n";
+    setColor(C_NORMAL);
+}
+
+void filaTabla(const string* t, const int* w, int n, const int* colores) {
+    setColor(C_BORDE); cout << "  " << G(179);
+    for (int i = 0; i < n; i++) {
+        setColor(colores[i]); cout << " " << ajustar(t[i], w[i]) << " ";
+        setColor(C_BORDE);    cout << G(179);
+    }
+    cout << "\n";
+    setColor(C_NORMAL);
+}
+
+// Tabla de repuestos (columnas fijas)
+const int WREP[5] = {8, 24, 14, 10, 7};
+
+void encabezadoRepuestos() {
+    const string t[5] = {"CODIGO", "NOMBRE", "MARCA", "PRECIO", "STOCK"};
+    const int c[5] = {C_TITULO, C_TITULO, C_TITULO, C_TITULO, C_TITULO};
+    lineaTabla(WREP, 5, 218, 194, 191);
+    filaTabla(t, WREP, 5, c);
+    lineaTabla(WREP, 5, 195, 197, 180);
+}
+
+void filaRepuesto(Repuesto* r) {
+    string t[5] = {aTexto(r->codigo), r->nombre, r->marca, "S/ " + aTexto(r->precio), aTexto(r->cantidad)};
+    int c[5] = {C_DATO, C_NORMAL, C_NORMAL, C_NORMAL, r->cantidad <= 5 ? C_ERROR : C_OK};
+    filaTabla(t, WREP, 5, c);
+}
+
+void pieRepuestos() { lineaTabla(WREP, 5, 192, 193, 217); }
+
+/* ===================== LECTURA VALIDADA ===================== */
+int leerEntero(const string& mensaje) {
+    int valor;
+    while (true) {
+        setColor(C_BORDE); cout << mensaje; setColor(C_DATO);
+        if (cin >> valor) { cin.ignore(10000, '\n'); setColor(C_NORMAL); return valor; }
+        cin.clear();
+        cin.ignore(10000, '\n');
+        error("Valor invalido. Ingrese un numero entero.");
+    }
+}
+
+double leerReal(const string& mensaje) {
+    double valor;
+    while (true) {
+        setColor(C_BORDE); cout << mensaje; setColor(C_DATO);
+        if (cin >> valor) { cin.ignore(10000, '\n'); setColor(C_NORMAL); return valor; }
+        cin.clear();
+        cin.ignore(10000, '\n');
+        error("Valor invalido. Ingrese un numero.");
+    }
+}
+
+string leerTexto(const string& mensaje) {
+    string texto;
+    do {
+        setColor(C_BORDE); cout << mensaje; setColor(C_DATO);
+        getline(cin, texto);
+        if (texto.empty()) error("El campo no puede estar vacio.");
+    } while (texto.empty());
+    for (size_t i = 0; i < texto.size(); i++)
+        if (texto[i] == '|') texto[i] = '-';     // '|' separa los campos del archivo
+    setColor(C_NORMAL);
+    return texto;
+}
+
+/* ===================== LISTA: CATALOGO DE REPUESTOS ===================== */
+Repuesto* buscarRepuesto(int codigo) {
+    Repuesto* actual = inicio;
+    while (actual != NULL && actual->codigo != codigo)
+        actual = actual->siguiente;
+    return actual;                       // NULL si no existe
+}
+
+void insertarRepuesto(int codigo, string nombre, string marca, double precio, int cantidad) {
+    if (buscarRepuesto(codigo) != NULL) {
+        error("El codigo " + aTexto(codigo) + " ya existe.");
+        return;
+    }
+    Repuesto* nuevo = new Repuesto;
+    nuevo->codigo = codigo;
+    nuevo->nombre = nombre;
+    nuevo->marca = marca;
+    nuevo->precio = precio;
+    nuevo->cantidad = cantidad;
+    nuevo->siguiente = NULL;
+
+    if (inicio == NULL) {                // lista vacia
+        inicio = nuevo;
+    } else {                             // recorre hasta el ultimo nodo
+        Repuesto* actual = inicio;
+        while (actual->siguiente != NULL)
+            actual = actual->siguiente;
+        actual->siguiente = nuevo;
+    }
+    ok("Repuesto registrado correctamente.");
+    guardarTodo();
+}
 
